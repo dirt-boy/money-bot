@@ -4,11 +4,19 @@ import csv
 import pickle
 from datetime import date
 
+
+###################################################################################################
+########################################## DEFINITIONS ############################################
+###################################################################################################
+
+
 ### GLOBAL VARIABLES ##############################################################################
 #																								  #	
-DATE = date.today().strftime('%m_%d_%y')													  #
+DATE = date.today().strftime('%m_%d_%y')
+USE_CUSTOM_PROPS = False													  #
 #																								  #
 ### END GLOBAL VARIABLES ##########################################################################
+
 
 
 ### CUSTOM ERROR CLASSES ##########################################################################
@@ -32,8 +40,15 @@ class WriteError(Error):
 	message = "Unable to write file. File or data may be incompatible and/or corrupted."
 	def __init(self, message):
 		self.message = message
+
+class ParseError(Error):
+	message = "Unable to parse values. Please check custom property constructors and input values."
+	def __init(self, message):
+		self.message = message
 #																							      #
 ### END CUSTOM ERROR CLASSES ######################################################################
+
+
 
 ### CUSTOM DATA STRUCTURE CLASSES #################################################################
 #																								  #
@@ -43,6 +58,74 @@ class TransactionRecord:
 		self.charges = charges
 #																							      #
 ### END CUSTOM DATA STRUCTURE CLASSES #############################################################
+
+
+
+### CUSTOM PROPERTY CONSTRUCTORS ##################################################################
+#
+#|| FIELDS ||#
+
+def FieldsProperty(values):
+
+	##Data processing code goes here##
+	fields = values
+	return fields
+
+#|| FILTERS ||#
+def FilterProperty(values):
+	##Filter processing code goes here##
+	_filter = values
+	return _filter
+
+#|| SOURCES ||#
+def SourcesProperty(values):
+	##Source processing code goes here##
+	sources = values
+	return sources
+
+#|| CUSTOM ||#
+	#Your custom property constructor(s) here!#
+#
+### END CUSTOM PROPERTY CONSTRUCTORS ##############################################################
+
+
+
+### CUSTOM PARAMETER CLASSES ######################################################################
+#	
+class StandardProperty:
+	def __init__(self, prop):
+		self.prop = prop
+
+class FieldsProperty(StandardProperty):
+	prop = FieldsProperty
+	def __init__(self, prop, values):
+		self.prop = prop
+		self.values = values
+
+class FilterProperty(StandardProperty):
+	prop = FilterProperty
+	def __init__(self, prop, values):
+		self.prop = prop
+		self.values = values
+
+class SourcesProperty(StandardProperty):
+	prop = SourcesProperty
+	def __init__(self, prop, values):
+		self.prop = prop
+		self.values = values	
+
+class CustomProperty(StandardProperty):
+	#user must define custom property
+	def __init__(self, prop, values):
+		self.prop = prop
+		self.values = values																						  #
+#																							      #
+### END CUSTOM PARAMETER CLASSES ##################################################################
+
+
+###################################################################################################
+##########################################  END DEFINITIONS #######################################
+###################################################################################################
 
 
 #build func to ask for auth key
@@ -55,7 +138,7 @@ def read():
 
 			#pull txn_ and ch_ where limit is clamp on # of transactions returned
 			balance_transactions = stripe.BalanceTransaction.list(limit=3)
-			charges = stripe.Charge.list(limit=3)
+			charges = stripe.Charge.list(limit=10)
 
 			data = TransactionRecord(balance_transactions, charges)
 
@@ -77,11 +160,14 @@ def write(charges):
 		values.append(charges['data'][i].values())
 	path = 'results/balance_transactions_%s.csv' % DATE
 
-	
+
 	try:
 		file = open(path, 'w+')
 		writer = csv.writer(file)
 		try:
+			## UNDER CONSTRUCTION ###
+			#for h in headers:
+			## UNDER CONSTRUCTION ###
 			writer.writerow(headers)
 			for v in values:
 				writer.writerow(v)
@@ -91,14 +177,25 @@ def write(charges):
 		print(e.message)
 		
 
+### UNIT TESTS ###
+
+def testRead():
+	return read()
+
+def testWrite():
+	write(testRead())
+
+def test_1():
+	data = read()
+	write(data.charges)
 
 
 
+### UNCOMMENT FOR TESTING ###
+
+test_1()
 
 
-
-data = read()
-write(data.charges)
 
 
 
