@@ -38,12 +38,12 @@ class FileError(Error):
 
 class WriteError(Error):
 	message = "Unable to write file. File or data may be incompatible and/or corrupted."
-	def __init(self, message):
+	def __init__(self, message):
 		self.message = message
 
 class ParseError(Error):
 	message = "Unable to parse values. Please check custom property constructors and input values."
-	def __init(self, message):
+	def __init__(self, message):
 		self.message = message
 #																							      #
 ### END CUSTOM ERROR CLASSES ######################################################################
@@ -56,6 +56,28 @@ class TransactionRecord:
 	def __init__(self, balance_transactions, charges):
 		self.balance_transactions = balance_transactions
 		self.charges = charges
+
+class Field:
+	description = ""
+	internal_name = ""
+	external_name = ""
+	def __init__(self, description, internal_name, external_name):
+		self.description = description
+		self.internal_name = internal_name
+		self.external_name = external_name
+
+class Filter:
+	description = ""
+	parameters = ""
+	def __init__(self, description, parameters):
+		self.description = description
+		self.parameters = parameters
+
+class Source:
+	description = ""
+	url = ""
+
+
 #																							      #
 ### END CUSTOM DATA STRUCTURE CLASSES #############################################################
 
@@ -63,27 +85,28 @@ class TransactionRecord:
 
 ### CUSTOM PROPERTY CONSTRUCTORS ##################################################################
 #
-#|| FIELDS ||#
+#|| FIELD INGEST NODES ||#
 
-def FieldsProperty(values):
-
+def FieldsIngest(values):
 	##Data processing code goes here##
+	# assume the data comes as a list of strings
+	#that must be converted into Field objects	
 	fields = values
 	return fields
 
-#|| FILTERS ||#
-def FilterProperty(values):
+#|| FILTER INGEST NODES ||#
+def FilterIngest(values):
 	##Filter processing code goes here##
 	_filter = values
 	return _filter
 
-#|| SOURCES ||#
-def SourcesProperty(values):
+#|| SOURCE INGEST NODES ||#
+def SourcesIngest(values):
 	##Source processing code goes here##
 	sources = values
 	return sources
 
-#|| CUSTOM ||#
+#|| CUSTOM INGEST NODES ||#
 	#Your custom property constructor(s) here!#
 #
 ### END CUSTOM PROPERTY CONSTRUCTORS ##############################################################
@@ -97,19 +120,19 @@ class StandardProperty:
 		self.prop = prop
 
 class FieldsProperty(StandardProperty):
-	prop = FieldsProperty
+	prop = FieldsIngest
 	def __init__(self, prop, values):
 		self.prop = prop
 		self.values = values
 
 class FilterProperty(StandardProperty):
-	prop = FilterProperty
+	prop = FilterIngest
 	def __init__(self, prop, values):
 		self.prop = prop
 		self.values = values
 
 class SourcesProperty(StandardProperty):
-	prop = SourcesProperty
+	prop = SourcesIngest
 	def __init__(self, prop, values):
 		self.prop = prop
 		self.values = values	
