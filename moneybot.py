@@ -5,12 +5,6 @@ import pickle
 from datetime import date
 
 ###################################################################################################
-##?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?# TEST MODE #?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?##
-###################################################################################################
-"""
-"""
-
-###################################################################################################
 ########################################## DEFINITIONS ############################################
 ###################################################################################################
 
@@ -158,16 +152,29 @@ class CustomProperty(StandardProperty):
 ### END CUSTOM PARAMETER CLASSES ##################################################################
 
 
-### METHODS #######################################################################################
 
+### METHODS #######################################################################################
+#																								  #
 #if an ingested field object has the same internal name as a header, pull data for that field
 def matchFields(data, fields):
 	headers = data['data'][0].keys()
 	matchFields = []
-	for f in fields.values:
+	for i, f in enumerate(fields.values):
 		if f.internal_name in headers:
 			matchFields.append(f)
+		else:
+			pass
 	return matchFields
+
+def iterSelect(data, values):
+#iterative selection
+	result = [] 
+	for x in data:
+		if x in values:
+			result.append(x)
+		else:
+			pass
+	return result
 
 def write(charges):
 	path = 'results/balance_transactions_%s.csv' % DATE
@@ -179,8 +186,10 @@ def write(charges):
 			writer.writerow(v)
 	except WriteError as e:
 		print(e.message)
-
+#																								  #
 ### END METHODS ###################################################################################
+
+
 
 ###################################################################################################
 ##########################################  END DEFINITIONS #######################################
