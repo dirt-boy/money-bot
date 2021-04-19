@@ -76,8 +76,9 @@ class Filter:
 class Source:
 	description = ""
 	url = ""
-
-
+	def __init__(self, description, url):
+		self.description = description
+		self.url = url
 #																							      #
 ### END CUSTOM DATA STRUCTURE CLASSES #############################################################
 
@@ -90,8 +91,14 @@ class Source:
 def FieldsIngest(values):
 	##Data processing code goes here##
 	# assume the data comes as a list of strings
-	#that must be converted into Field objects	
-	fields = values
+	#that must be converted into Field objects
+	fieldList = []
+	for v in values:
+		try:
+			fieldList.append(Field(v['description'], v['internal_name'], v['external_name']))
+		except ParseError as e:
+			print(e.message)
+	fields = fieldList
 	return fields
 
 #|| FILTER INGEST NODES ||#
@@ -123,7 +130,7 @@ class FieldsProperty(StandardProperty):
 	prop = FieldsIngest
 	def __init__(self, prop, values):
 		self.prop = prop
-		self.values = values
+		self.values = self.prop(values)
 
 class FilterProperty(StandardProperty):
 	prop = FilterIngest
@@ -153,22 +160,24 @@ class CustomProperty(StandardProperty):
 
 #build func to ask for auth key
 
+#if an ingested field object has the same internal name as a header, pull data for that field
+def matchFields(data, fields):
+	headers = charges['data'][0].keys()
+	matchFields = []
+	for f in fields:
+		if f.internal_name in headers.keys():
+			matchFields.append(f)
+	return matchFields
+		
+
 def read():
 	if os.path.exists('data/token.pickle'):
 		try:
-			#auth with saved key
 			stripe.api_key = pickle.load(open('data/token.pickle', 'rb'))
-
-			#pull txn_ and ch_ where limit is clamp on # of transactions returned
 			balance_transactions = stripe.BalanceTransaction.list(limit=3)
 			charges = stripe.Charge.list(limit=10)
-
 			data = TransactionRecord(balance_transactions, charges)
-
-			#return TransactionRecord
 			return(data)
-
-		#catch AuthError	
 		except AuthError as e:
 			print(e.message)
 	else:
@@ -176,47 +185,61 @@ def read():
 
 
 def write(charges):
-	#Prep vars
-	headers = charges['data'][0].keys()
-	values = []
-	for i, val in enumerate(charges['data']):
-		values.append(charges['data'][i].values())
 	path = 'results/balance_transactions_%s.csv' % DATE
-
-
+	file = open(path, 'w+')
+	writer = csv.writer()
+	writer.writerow(headers)
 	try:
-		file = open(path, 'w+')
-		writer = csv.writer(file)
-		try:
-			## UNDER CONSTRUCTION ###
-			#for h in headers:
-			## UNDER CONSTRUCTION ###
-			writer.writerow(headers)
-			for v in values:
-				writer.writerow(v)
-		except WriteError as e:
-			print(e.message) 
-	except FileError as e:
+		for v in values:
+			writer.writerow(v)
+	except WriteError as e:
 		print(e.message)
 		
 
 ### UNIT TESTS ###
+###|| TEST DATA ||###
+
+t_fields = [
+	{"description": "Test description 1", "internal_name": "Test internal name 1", "external_name": "Test external name 1"},
+	{"description": "Test description 2", "internal_name": "Test internal name 2", "external_name": "Test external name 3"},
+	{"description": "Test description 3", "internal_name": "Test internal name 3", "external_name": "Test external name 3"}
+]
+
+
 
 def testRead():
 	return read()
 
 def testWrite():
-	write(testRead())
+	write(testRead().charges)
 
-def test_1():
+def testFieldsIngest():
+	testFieldIngest = FieldsProperty(FieldsIngest, t_fields)
+	for f in testFieldIngest.values:
+		x = f.description
+		y = f.internal_name
+		z = f.external_name
+	return testFieldIngest
+
+def testMatchFields():
+	data = read()
+	fields = testFieldsIngest()
+	x = matchFields(data, fields)
+	print(x)
+
+
+def testRun():
 	data = read()
 	write(data.charges)
 
 
 
 ### UNCOMMENT FOR TESTING ###
-
-test_1()
+#testRead()
+#testWrite()
+#testRun()
+#testFieldsIngest()
+testMatchFields()
 
 
 
