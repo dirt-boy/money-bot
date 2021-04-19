@@ -18,19 +18,28 @@ def testWrite():
 	src.write(t_data)
 
 def testFieldsIngest():
-	testFieldIngest = src.FieldsProperty(FieldsIngest, t_fields_2)
+	testFieldIngest = src.FieldsProperty(t_fields_2)
 	for f in testFieldIngest.values:
 		x = f.description
 		y = f.internal_name
 		z = f.external_name
 	return testFieldIngest
 
+def testSourcesIngest():
+	testSourceIngest = src.SourcesProperty(src.SourcesIngest, t_sources)
+	for s in testSourceIngest.values:
+		a = s.description
+		b = s.url
+		c = s.headerKey
+		d = s.headerIndex
+	return testSourceIngest
+
 def testMatchFields():
 	data = t_data
-	fields = t_processed_fields
-	x = src.matchFields(data, fields)
-	for i in x:
-		y = i.internal_name
+	fields = t_processed_fields.values
+	source = t_sources.values[0]
+	x = src.matchFields(data, fields, source)
+	print(x)
 
 
 def testIterSelect():
@@ -61,6 +70,8 @@ t_values = ["amount", "billing_details", "id"]
 t_processed_fields = src.FieldsProperty(src.FieldsIngest, t_fields_2)
 
 t_data = generate()
+
+t_sources = src.SourcesProperty(src.SourcesIngest, "data/sources.json")
 ###|| END TEST DATA ||###
 
 
@@ -71,7 +82,7 @@ t_data = generate()
 #testWrite()
 #testRun()
 #testFieldsIngest()
-#testMatchFields()
-testIterSelect()
-
+testMatchFields()
+#testIterSelect()
+#testSourcesIngest()
 

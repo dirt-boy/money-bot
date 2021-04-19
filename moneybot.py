@@ -2,6 +2,7 @@ import stripe
 import os
 import csv
 import pickle
+import json
 from datetime import date
 
 ###################################################################################################
@@ -75,9 +76,13 @@ class Filter:
 class Source:
 	description = ""
 	url = ""
-	def __init__(self, description, url):
+	headerKey = ""
+	headerIndex = 0
+	def __init__(self, description, url, headerKey, headerIndex):
 		self.description = description
 		self.url = url
+		self.headerKey = headerKey
+		self.headerIndex = headerIndex
 #																							      #
 ### END CUSTOM DATA STRUCTURE CLASSES #############################################################
 
@@ -107,10 +112,16 @@ def FilterIngest(values):
 	return _filter
 
 #|| SOURCE INGEST NODES ||#
-def SourcesIngest(values):
-	##Source processing code goes here##
-	sources = values
-	return sources
+def SourcesIngest(file):
+	#basic sources ingest takes in dict of sources from file
+	sourceList = []
+	f = open(file, "r")
+	data = f.read()
+	data = json.loads(data)["sources"]
+	for s in data:
+		sourceList.append(Source(s['description'], s['url'], s['headerKey'], s['headerIndex']))
+	return sourceList
+
 
 #|| CUSTOM INGEST NODES ||#
 	#Your custom property constructor(s) here!#
@@ -141,7 +152,7 @@ class SourcesProperty(StandardProperty):
 	prop = SourcesIngest
 	def __init__(self, prop, values):
 		self.prop = prop
-		self.values = values	
+		self.values = self.prop(values)	
 
 class CustomProperty(StandardProperty):
 	#user must define custom property
@@ -154,16 +165,19 @@ class CustomProperty(StandardProperty):
 
 
 ### METHODS #######################################################################################
-#																								  #
+#	
+def getHeaders(data, key, index):
+	headers = data[key][index].keys()
+	return headers
+
+																							  
 #if an ingested field object has the same internal name as a header, pull data for that field
-def matchFields(data, fields):
-	headers = data['data'][0].keys()
-	matchFields = []
-	for i, f in enumerate(fields.values):
-		if f.internal_name in headers:
-			matchFields.append(f)
-		else:
-			pass
+def matchFields(data, fields, source):
+	headers = getHeaders(data, source.headerKey, source.headerIndex)
+	fieldNames = []
+	for f in fields:
+		fieldNames.append(f.internal_name)
+	matchFields = iterSelect(headers, fieldNames)	
 	return matchFields
 
 def iterSelect(data, values):
