@@ -1,6 +1,8 @@
 import moneybot as src
 import json
 
+message = " test was passed.... \nRunning next test... \n"
+
 ### UNIT TESTS ###
 
 
@@ -8,30 +10,30 @@ def generate():
 	data = open("testbenchdata/t_data.json", "r")
 	data = data.read()
 	data = json.loads(data)
+	print("Generate Data", message)
 	return data
 
-
-def testRead():
-	return src.read()
-
 def testWrite():
-	src.write(t_data)
+	src.write(t_data, t_sources.values[0])
+	print("Write", message)
 
 def testFieldsIngest():
-	testFieldIngest = src.FieldsProperty(t_fields_2)
+	testFieldIngest = src.FieldsProperty(src.FieldsIngest, t_fields_2)
 	for f in testFieldIngest.values:
 		x = f.description
 		y = f.internal_name
 		z = f.external_name
+	print("Fields Ingest", message)
 	return testFieldIngest
 
 def testSourcesIngest():
-	testSourceIngest = src.SourcesProperty(src.SourcesIngest, t_sources)
+	testSourceIngest = src.SourcesProperty(src.SourcesIngest, t_sources_path)
 	for s in testSourceIngest.values:
 		a = s.description
 		b = s.url
 		c = s.headerKey
 		d = s.headerIndex
+	print("Sources Ingest", message)
 	return testSourceIngest
 
 def testMatchFields():
@@ -39,6 +41,7 @@ def testMatchFields():
 	fields = t_processed_fields.values
 	source = t_sources.values[0]
 	x = src.matchFields(data, fields, source)
+	print("Match Fields", message)
 
 
 def testIterSelect():
@@ -46,13 +49,14 @@ def testIterSelect():
 	values = t_values
 	keys = data['data'][0].keys()
 	result = src.iterSelect(keys, values)
+	print("Iter Select", message)
 
 def testGetValues():
 	data = t_data
 	fields = t_processed_fields.values
 	source = t_sources.values[0]
 	result = src.getValues(data, fields, source)
-	print(result)
+	print("Get Values", message)
 
 ###|| TEST DATA ||###
 
@@ -74,19 +78,20 @@ t_processed_fields = src.FieldsProperty(src.FieldsIngest, t_fields_2)
 
 t_data = generate()
 
+t_sources_path = "data/sources.json"
+
 t_sources = src.SourcesProperty(src.SourcesIngest, "data/sources.json")
 ###|| END TEST DATA ||###
 
 
 
 ### UNCOMMENT FOR TESTING ###
-#generate()
-#testRead()
+generate()
+##WRITING UNDER CONSTRUCTION###
 #testWrite()
-#testRun()
-#testFieldsIngest()
-#testMatchFields()
-#testIterSelect()
-#testSourcesIngest()
+testFieldsIngest()
+testMatchFields()
+testIterSelect()
+testSourcesIngest()
 testGetValues()
-
+print("All tests passed!!!")

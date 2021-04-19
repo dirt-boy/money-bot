@@ -13,7 +13,8 @@ from datetime import date
 ### GLOBAL VARIABLES #############################################################################
 #																								  #	
 DATE = date.today().strftime('%m_%d_%y')
-USE_CUSTOM_PROPS = False													  #
+USE_CUSTOM_PROPS = False	
+SOURCES_PATH = "data/sources.json"												  #
 #																								  #
 ### END GLOBAL VARIABLES ##########################################################################
 
@@ -78,6 +79,7 @@ class Source:
 	url = ""
 	headerKey = ""
 	headerIndex = 0
+	path = ""
 	def __init__(self, description, url, headerKey, headerIndex):
 		self.description = description
 		self.url = url
@@ -189,14 +191,17 @@ def iterSelect(data, values):
 			pass
 	return result
 
-def write(charges):
+##write will have to be redone!!! to work with the current values schema!!!
+def write(data, source):
 	path = 'results/balance_transactions_%s.csv' % DATE
+	headers = getHeaders(data, source.headerKey, source.headerIndex)
 	file = open(path, 'w+')
-	writer = csv.writer()
+	writer = csv.writer(file)
 	writer.writerow(headers)
 	try:
-		for v in values:
-			writer.writerow(v)
+		for d in data[source.headerKey]:
+			for key in d:
+				writer.writerow(key)
 	except WriteError as e:
 		print(e.message)
 
