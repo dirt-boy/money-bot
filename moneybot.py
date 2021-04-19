@@ -169,7 +169,6 @@ class CustomProperty(StandardProperty):
 def getHeaders(data, key, index):
 	headers = data[key][index].keys()
 	return headers
-
 																							  
 #if an ingested field object has the same internal name as a header, pull data for that field
 def matchFields(data, fields, source):
@@ -200,6 +199,23 @@ def write(charges):
 			writer.writerow(v)
 	except WriteError as e:
 		print(e.message)
+
+def getValues(data, fields, source):
+	result = []
+	fieldNames = []
+	for f in fields:
+		fieldNames.append(f.internal_name) 
+		result.append({})
+	for i, d in enumerate(data[source.headerKey]):
+		for key in d:
+			if key in fieldNames and i<len(result):
+				result[i][key] = d[key]
+	return result
+
+
+
+
+
 #																								  #
 ### END METHODS ###################################################################################
 

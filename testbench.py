@@ -39,7 +39,6 @@ def testMatchFields():
 	fields = t_processed_fields.values
 	source = t_sources.values[0]
 	x = src.matchFields(data, fields, source)
-	print(x)
 
 
 def testIterSelect():
@@ -48,8 +47,12 @@ def testIterSelect():
 	keys = data['data'][0].keys()
 	result = src.iterSelect(keys, values)
 
-
-	
+def testGetValues():
+	data = t_data
+	fields = t_processed_fields.values
+	source = t_sources.values[0]
+	result = src.getValues(data, fields, source)
+	print(result)
 
 ###|| TEST DATA ||###
 
@@ -82,7 +85,8 @@ t_sources = src.SourcesProperty(src.SourcesIngest, "data/sources.json")
 #testWrite()
 #testRun()
 #testFieldsIngest()
-testMatchFields()
+#testMatchFields()
 #testIterSelect()
 #testSourcesIngest()
+testGetValues()
 
