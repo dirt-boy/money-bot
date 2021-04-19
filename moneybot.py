@@ -4,13 +4,18 @@ import csv
 import pickle
 from datetime import date
 
+###################################################################################################
+##?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?# TEST MODE #?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?#?##
+###################################################################################################
+"""
+"""
 
 ###################################################################################################
 ########################################## DEFINITIONS ############################################
 ###################################################################################################
 
 
-### GLOBAL VARIABLES ##############################################################################
+### GLOBAL VARIABLES #############################################################################
 #																								  #	
 DATE = date.today().strftime('%m_%d_%y')
 USE_CUSTOM_PROPS = False													  #
@@ -153,24 +158,37 @@ class CustomProperty(StandardProperty):
 ### END CUSTOM PARAMETER CLASSES ##################################################################
 
 
+### METHODS #######################################################################################
+
+#if an ingested field object has the same internal name as a header, pull data for that field
+def matchFields(data, fields):
+	headers = data['data'][0].keys()
+	matchFields = []
+	for f in fields.values:
+		if f.internal_name in headers:
+			matchFields.append(f)
+	return matchFields
+
+def write(charges):
+	path = 'results/balance_transactions_%s.csv' % DATE
+	file = open(path, 'w+')
+	writer = csv.writer()
+	writer.writerow(headers)
+	try:
+		for v in values:
+			writer.writerow(v)
+	except WriteError as e:
+		print(e.message)
+
+### END METHODS ###################################################################################
+
 ###################################################################################################
 ##########################################  END DEFINITIONS #######################################
 ###################################################################################################
 
-
-#build func to ask for auth key
-
-#if an ingested field object has the same internal name as a header, pull data for that field
-def matchFields(data, fields):
-	headers = charges['data'][0].keys()
-	matchFields = []
-	for f in fields:
-		if f.internal_name in headers.keys():
-			matchFields.append(f)
-	return matchFields
-		
-
-def read():
+	
+def main():
+				
 	if os.path.exists('data/token.pickle'):
 		try:
 			stripe.api_key = pickle.load(open('data/token.pickle', 'rb'))
@@ -184,64 +202,6 @@ def read():
 		print("Unable to complete authorization: token not found.")
 
 
-def write(charges):
-	path = 'results/balance_transactions_%s.csv' % DATE
-	file = open(path, 'w+')
-	writer = csv.writer()
-	writer.writerow(headers)
-	try:
-		for v in values:
-			writer.writerow(v)
-	except WriteError as e:
-		print(e.message)
-		
-
-### UNIT TESTS ###
-###|| TEST DATA ||###
-
-t_fields = [
-	{"description": "Test description 1", "internal_name": "Test internal name 1", "external_name": "Test external name 1"},
-	{"description": "Test description 2", "internal_name": "Test internal name 2", "external_name": "Test external name 3"},
-	{"description": "Test description 3", "internal_name": "Test internal name 3", "external_name": "Test external name 3"}
-]
-
-
-
-def testRead():
-	return read()
-
-def testWrite():
-	write(testRead().charges)
-
-def testFieldsIngest():
-	testFieldIngest = FieldsProperty(FieldsIngest, t_fields)
-	for f in testFieldIngest.values:
-		x = f.description
-		y = f.internal_name
-		z = f.external_name
-	return testFieldIngest
-
-def testMatchFields():
-	data = read()
-	fields = testFieldsIngest()
-	x = matchFields(data, fields)
-	print(x)
-
-
-def testRun():
-	data = read()
-	write(data.charges)
-
-
-
-### UNCOMMENT FOR TESTING ###
-#testRead()
-#testWrite()
-#testRun()
-#testFieldsIngest()
-testMatchFields()
-
-
-
-
-
+if __name__ == "__main__":
+   # stuff only to run when not called via 'import' here
+   main()
