@@ -3,6 +3,7 @@ import os
 import csv
 import pickle
 import json
+from flask import Flask, request
 from datetime import date
 
 ###################################################################################################
@@ -14,7 +15,8 @@ from datetime import date
 #																								  #	
 DATE = date.today().strftime('%m_%d_%y')
 USE_CUSTOM_PROPS = False	
-SOURCES_PATH = "data/sources.json"												  #
+SOURCES_PATH = "data/sources.json"
+app = Flask(__name__)												  #
 #																								  #
 ### END GLOBAL VARIABLES ##########################################################################
 
@@ -119,6 +121,7 @@ def SourcesIngest(file):
 	sourceList = []
 	f = open(file, "r")
 	data = f.read()
+	print(data)
 	data = json.loads(data)["sources"]
 	for s in data:
 		sourceList.append(Source(s['description'], s['url'], s['headerKey'], s['headerIndex']))
@@ -218,21 +221,7 @@ def getValues(data, fields, source):
 	return result
 
 
-
-
-
-#																								  #
-### END METHODS ###################################################################################
-
-
-
-###################################################################################################
-##########################################  END DEFINITIONS #######################################
-###################################################################################################
-
-	
-def main():
-				
+def getData():
 	if os.path.exists('data/token.pickle'):
 		try:
 			stripe.api_key = pickle.load(open('data/token.pickle', 'rb'))
@@ -243,9 +232,32 @@ def main():
 		except AuthError as e:
 			print(e.message)
 	else:
-		print("Unable to complete authorization: token not found.")
+		print("Unable to complete authorization: token not found.")	
 
+
+#																								  #
+### END METHODS ###################################################################################
+
+
+
+### FLASK #######################################################################################
+#
+@app.route("/")
+def index():
+	data = getData()
+	return data.charges
+    	#do cool internet stuff here!
+
+
+
+
+
+#																								  #
+### END FLASK ###################################################################################
 
 if __name__ == "__main__":
-   # stuff only to run when not called via 'import' here
-   main()
+	app.run(host="127.0.0.1", port=8080, debug=True)
+
+###################################################################################################
+##########################################  END DEFINITIONS #######################################
+###################################################################################################	
