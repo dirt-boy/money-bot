@@ -109,6 +109,17 @@ def FieldsIngest(values):
 	fields = fieldList
 	return fields
 
+def FieldsIngestFromDict(values):
+	fieldList = []
+	for v in values:
+		try:
+			fieldList.append(Field('N/A', v, "N/A"))
+		except ParseError as e:
+			print(e.message)
+	fields = fieldList
+	return fields
+
+
 #|| FILTER INGEST NODES ||#
 def FilterIngest(values):
 	##Filter processing code goes here##
@@ -245,12 +256,27 @@ def getData():
 @app.route("/")
 def index():
 	#do cool internet stuff here!
-	data = getData()
-	return data.charges
+	data = getData().charges
+	source = SourcesProperty(SourcesIngest,"data/sources.json").values[0]
+	headers = getHeaders(data, source.headerKey, source.headerIndex)
+	fields = FieldsProperty(FieldsIngestFromDict, headers).values
+	values = getValues(data, fields, source)
+	return str(values)
 	##SEE IF U CAN WRITE DATA UP HERE!!!
 	## like this means u have everything u want.... u can display/create anything u want.... incredible
-	
+
     	
+@app.route("/headers")
+def headers():
+	data = getData().charges
+	headers = getHeaders(data, "data", 0)
+	return str(headers)
+
+@app.route("/source")
+def source():
+	data = getData().charges
+	headers = getHeaders(data, "data", 0)
+	return str(headers)
 
 
 
