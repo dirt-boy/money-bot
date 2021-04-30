@@ -244,9 +244,13 @@ def getData():
 #
 @app.route("/")
 def index():
+	#do cool internet stuff here!
 	data = getData()
 	return data.charges
-    	#do cool internet stuff here!
+	##SEE IF U CAN WRITE DATA UP HERE!!!
+	## like this means u have everything u want.... u can display/create anything u want.... incredible
+	
+    	
 
 
 
