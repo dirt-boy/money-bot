@@ -16,7 +16,7 @@ from datetime import date
 DATE = date.today().strftime('%m_%d_%y')
 USE_CUSTOM_PROPS = False	
 SOURCES_PATH = "data/sources.json"
-app = Flask(__name__)												  #
+app = Flask(__name__, static_folder="data/web/")												  #
 #																								  #
 ### END GLOBAL VARIABLES ##########################################################################
 
@@ -214,8 +214,10 @@ def write(data, source):
 	writer.writerow(headers)
 	try:
 		for d in data[source.headerKey]:
+			row = []
 			for key in d:
-				writer.writerow(key)
+				row.append(d[key])
+			writer.writerow(row)
 	except WriteError as e:
 		print(e.message)
 

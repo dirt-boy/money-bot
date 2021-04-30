@@ -1,6 +1,6 @@
 import moneybot as src
 import json
-from flask import Flask, request
+from flask import Flask, request, render_template
 	
 message = " test was passed.... \nRunning next test... \n"
 app = Flask(__name__)
@@ -18,6 +18,7 @@ def generate():
 def testWrite():
 	src.write(t_data, t_sources.values[0])
 	print("Write", message)
+	return()
 
 def testFieldsIngest():
 	testFieldIngest = src.FieldsProperty(src.FieldsIngest, t_fields_2)
@@ -81,9 +82,9 @@ t_processed_fields = src.FieldsProperty(src.FieldsIngest, t_fields_2)
 
 t_data = generate()
 
-t_sources_path = "data/sources.json"
+t_sources_path = "static/sources.json"
 
-t_sources = src.SourcesProperty(src.SourcesIngest, "data/sources.json")
+t_sources = src.SourcesProperty(src.SourcesIngest, "static/sources.json")
 ###|| END TEST DATA ||###
 
 
@@ -98,7 +99,10 @@ def testAll():
 	return "All tests passed!!!"
 
 
-testAll()
+@app.route("/loader/")
+def loader(x="HELLO"):
+	return render_template("index.html", x=x)
+	
 
 	
 
