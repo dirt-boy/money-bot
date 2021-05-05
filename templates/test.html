@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block head %}
+{% endblock %}
+
+<title>MoneyBot</title>
+
+{% block body %}
+
+<div class="source">
+<label for="source">Source:</label>
+
+<select name="source" id="source">
+  <option value="amount">Stripe</option>
+  <option value="donor-name">Facebook</option>
+  <option value="charge-id">PayPal</option>
+</select>
+
+</div>
+
+<div class="fields">
+<form method="post" action="/result">  
+    <fieldset>  
+    <legend>What is Your Favorite Pet?</legend>  
+    <input type="checkbox" name="favorite_pet" value="Cats" onclick="return ValidatePetSelection();">Cats<br>  
+    <input type="checkbox" name="favorite_pet" value="Dogs" onclick="return ValidatePetSelection();">Dogs<br>  
+    <input type="checkbox" name="favorite_pet" value="Birds" onclick="return ValidatePetSelection();">Birds<br>  
+        <br>  
+    <input type="submit" value="Submit now">  
+    </fieldset>  
+</form> 
+</div>
+
+{% endblock %}
+		

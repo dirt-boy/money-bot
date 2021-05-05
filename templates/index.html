@@ -6,14 +6,46 @@
 
 {% block body %}
 
-<div class="content">
-    
-    <h1 style="text-align:center">MoneyBot</h1>
+<div class="inputs">
+	{% block source %}
+			<form action="/configure/get-headers" method="GET">
+			<div class="source">
+				<label for="source">Source to configure:</label>
+				{{ sourceForm.source }}
+				{{ sourceForm.submitSource }}
+			</div>
+			</form>
+	{% endblock %}
+	
 
-    {% if x %}
+	
+	{% block fields %}
+		{% if fieldForm %}
+			<form action="/configure/get-headers/send-values" method="POST">
+				<div class="fields">
+					{{ fieldForm.fields }}
+					{{ fieldForm.submitFields }}
+				</div>
+			</form>
+		{% endif %}
+	{% endblock %}
 
-    <h1>{{ x }}</h1>
 
-    {% endif %}
+
+	{% block values %}
+		{% if values %}
+			<div class="values">
+				{% for v in values %}
+					<p>{{v}}</p>
+				{% endfor %}
+			</div>
+		{% endif %}
+	{% endblock %}
+	
+	
+	{% if data %}
+		<p>{{ data }}</p>
+	{% endif %}
+
 </div>
 {% endblock %}

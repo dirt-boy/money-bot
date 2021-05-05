@@ -3,7 +3,8 @@ import os
 import csv
 import pickle
 import json
-from flask import Flask, request
+from wtforms import Form, SelectField, SelectMultipleField, SubmitField, validators
+from flask import Flask, request, render_template
 from datetime import date
 
 ###################################################################################################
@@ -15,8 +16,9 @@ from datetime import date
 #																								  #	
 DATE = date.today().strftime('%m_%d_%y')
 USE_CUSTOM_PROPS = False	
-SOURCES_PATH = "data/sources.json"
-app = Flask(__name__, static_folder="data/web/")												  #
+SOURCES_PATH = "static/sources.json"
+app = Flask(__name__, static_folder="static")
+PRESETS = ["stripe", "none"]												  #
 #																								  #
 ### END GLOBAL VARIABLES ##########################################################################
 
@@ -77,16 +79,26 @@ class Filter:
 		self.parameters = parameters
 
 class Source:
+	name = ""
 	description = ""
 	url = ""
 	headerKey = ""
 	headerIndex = 0
 	path = ""
-	def __init__(self, description, url, headerKey, headerIndex):
+	def __init__(self, name, description, url, headerKey, headerIndex):
+		self.name = name
 		self.description = description
 		self.url = url
 		self.headerKey = headerKey
 		self.headerIndex = headerIndex
+
+class SourceForm(Form):
+	source = SelectField('Source', choices=PRESETS)
+	submitSource = SubmitField("submit")
+
+class FieldForm(Form):
+	fields = SelectMultipleField("Fields", coerce=str)
+	submitFields = SubmitField("submit")
 #																							      #
 ### END CUSTOM DATA STRUCTURE CLASSES #############################################################
 
@@ -135,7 +147,7 @@ def SourcesIngest(file):
 	print(data)
 	data = json.loads(data)["sources"]
 	for s in data:
-		sourceList.append(Source(s['description'], s['url'], s['headerKey'], s['headerIndex']))
+		sourceList.append(Source(s['name'], s['description'], s['url'], s['headerKey'], s['headerIndex']))
 	return sourceList
 
 
@@ -180,10 +192,17 @@ class CustomProperty(StandardProperty):
 
 
 
+### PRESETS #################### ##################################################################
+#
+STRIPE_PRESET = SourcesProperty(SourcesIngest, "static/sources.json")
+#																							      #
+### END PRESETS ###################################################################################
+
+
 ### METHODS #######################################################################################
 #	
 def getHeaders(data, key, index):
-	headers = data[key][index].keys()
+	headers = data[key][index].items()
 	return headers
 																							  
 #if an ingested field object has the same internal name as a header, pull data for that field
@@ -205,7 +224,7 @@ def iterSelect(data, values):
 			pass
 	return result
 
-##write will have to be redone!!! to work with the current values schema!!!
+##refactor to work with mutable headers
 def write(data, source):
 	path = 'results/balance_transactions_%s.csv' % DATE
 	headers = getHeaders(data, source.headerKey, source.headerIndex)
@@ -234,18 +253,34 @@ def getValues(data, fields, source):
 	return result
 
 
-def getData():
-	if os.path.exists('data/token.pickle'):
-		try:
-			stripe.api_key = pickle.load(open('data/token.pickle', 'rb'))
-			balance_transactions = stripe.BalanceTransaction.list(limit=3)
-			charges = stripe.Charge.list(limit=10)
-			data = TransactionRecord(balance_transactions, charges)
-			return(data)
-		except AuthError as e:
-			print(e.message)
+def getData(source):
+	if source=="stripe":
+		if os.path.exists('static/token.pickle'):
+			try:
+				stripe.api_key = pickle.load(open('static/token.pickle', 'rb'))
+				balance_transactions = stripe.BalanceTransaction.list(limit=3)
+				charges = stripe.Charge.list(limit=10)
+				data = TransactionRecord(balance_transactions, charges)
+				return(data)
+			except AuthError as e:
+				print(e.message)
+		else:
+			print("Unable to complete authorization: token not found.")	
 	else:
-		print("Unable to complete authorization: token not found.")	
+		return "Source not found."
+
+def loadSourcePreset(source):
+	if source=="stripe":
+		for s in SourcesProperty(SourcesIngest, "static/sources.json").values:
+			if s.name == "stripe":
+				return s
+			else:
+				return "Source stripe: string incorrect"
+	else:
+		return "Source not found"
+
+
+
 
 
 #																								  #
@@ -257,38 +292,50 @@ def getData():
 #
 @app.route("/")
 def index():
-	#do cool internet stuff here!
-	data = getData().charges
-	source = SourcesProperty(SourcesIngest,"data/sources.json").values[0]
-	headers = getHeaders(data, source.headerKey, source.headerIndex)
-	fields = FieldsProperty(FieldsIngestFromDict, headers).values
-	values = getValues(data, fields, source)
-	return str(values)
-	##SEE IF U CAN WRITE DATA UP HERE!!!
-	## like this means u have everything u want.... u can display/create anything u want.... incredible
+	sourceForm = SourceForm()
+	fieldForm = FieldForm()
+	return render_template("index.html", sourceForm=sourceForm)
 
-    	
-@app.route("/headers")
-def headers():
-	data = getData().charges
-	headers = getHeaders(data, "data", 0)
-	return str(headers)
-
-@app.route("/source")
-def source():
-	data = getData().charges
-	headers = getHeaders(data, "data", 0)
-	return str(headers)
+@app.route("/configure", methods=["GET", "POST"])
+def config():
+	sourceForm = SourceForm()
+	source = request.args.get('source')
+	return render_template("index.html", source=source, sourceForm=sourceForm)
 
 
+@app.route("/configure/get-headers", methods=["POST"])
+def configureSource():
+	sourceForm = SourceForm()
+	fieldForm = FieldForm()
+	source = request.args.get('source')
+	if source in PRESETS:
+		loadSource = loadSourcePreset(source)
+		data = getData(loadSource.name).charges
+		headers =getHeaders(data, loadSource.headerKey, loadSource.headerIndex)
+		mapping = {data:headers}
+		fieldForm.fields.choices = [(h[1], h[0]) for h in headers]
+	else:
+		print("Custom source identified.")
+	return render_template("index.html", sourceForm=sourceForm, fieldForm=fieldForm, mapping=mapping)
 
+@app.route("/configure/get-headers/send-values", methods=["POST"])
+def sendValuesFromInput():
+	source = request.args.get('source')
+	return str(source)
+	loadSource = loadSourcePreset(source)
+	data = getData(loadSource)
+	#display data
+
+	return render_template("index.html", data=data)
 
 
 #																								  #
 ### END FLASK ###################################################################################
 
 if __name__ == "__main__":
+	#uncomment for live debug vvv
 	app.run(host="127.0.0.1", port=8080, debug=True)
+
 
 ###################################################################################################
 ##########################################  END DEFINITIONS #######################################

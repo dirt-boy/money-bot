@@ -1,7 +1,7 @@
 {
     "sources":[
         {
-            "name":"Stripe",
+            "name":"stripe",
             "description":"Stripe is a common payment processor.",
             "url":"https://stripe.com",
             "headerKey":"data",
