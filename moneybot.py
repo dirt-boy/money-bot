@@ -3,13 +3,29 @@ import os
 import csv
 import pickle
 import json
+import secrets
+import bcrypt
 from wtforms import Form, SelectField, SelectMultipleField, SubmitField, validators
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, session
 from datetime import date
 
 ###################################################################################################
 ########################################## DEFINITIONS ############################################
 ###################################################################################################
+
+
+### SECURITY ######################################################################################
+#
+def getHashedKey(plain_text_key):
+    # Hash a key for the first time
+    #   (Using bcrypt, the salt is saved into the hash itself)
+    return bcrypt.hashpw(plain_text_key, bcrypt.gensalt())
+
+def checkKey(plain_text_key, hashed_key):
+    # Check hashed password. Using bcrypt, the salt is saved into the hash itself
+    return bcrypt.checkpw(plain_text_key, hashed_key)
+#																								  #
+### END SECURITY ##################################################################################	
 
 
 ### GLOBAL VARIABLES #############################################################################
@@ -18,7 +34,9 @@ DATE = date.today().strftime('%m_%d_%y')
 USE_CUSTOM_PROPS = False	
 SOURCES_PATH = "static/sources.json"
 app = Flask(__name__, static_folder="static")
-PRESETS = ["stripe", "none"]												  #
+PRESETS = ["stripe", "none"]
+TOKEN = getHashedKey(secrets.token_urlsafe(36))
+PERSIST = {}
 #																								  #
 ### END GLOBAL VARIABLES ##########################################################################
 
@@ -290,7 +308,7 @@ def loadSourcePreset(source):
 
 ### FLASK #######################################################################################
 #
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 def index():
 	sourceForm = SourceForm()
 	fieldForm = FieldForm()
@@ -303,7 +321,7 @@ def config():
 	return render_template("index.html", source=source, sourceForm=sourceForm)
 
 
-@app.route("/configure/get-headers", methods=["POST"])
+@app.route("/configure/get-headers", methods=["GET", "POST"])
 def configureSource():
 	sourceForm = SourceForm()
 	fieldForm = FieldForm()
@@ -311,22 +329,22 @@ def configureSource():
 	if source in PRESETS:
 		loadSource = loadSourcePreset(source)
 		data = getData(loadSource.name).charges
+		PERSIST["DATA"] = data
+		pos = list(PERSIST.values()).index(data)
+		key = list(PERSIST.keys())[pos]
+		session["data"] = key
+		session.modified = True
 		headers =getHeaders(data, loadSource.headerKey, loadSource.headerIndex)
-		mapping = {data:headers}
 		fieldForm.fields.choices = [(h[1], h[0]) for h in headers]
 	else:
 		print("Custom source identified.")
-	return render_template("index.html", sourceForm=sourceForm, fieldForm=fieldForm, mapping=mapping)
+	return render_template("index.html", sourceForm=sourceForm, fieldForm=fieldForm)
 
-@app.route("/configure/get-headers/send-values", methods=["POST"])
+@app.route("/configure/send-values", methods=["GET", "POST"])
 def sendValuesFromInput():
-	source = request.args.get('source')
-	return str(source)
-	loadSource = loadSourcePreset(source)
-	data = getData(loadSource)
-	#display data
 
-	return render_template("index.html", data=data)
+	#display data
+	return PERSIST[session["data"]]
 
 
 #																								  #
@@ -334,6 +352,7 @@ def sendValuesFromInput():
 
 if __name__ == "__main__":
 	#uncomment for live debug vvv
+	app.secret_key = TOKEN
 	app.run(host="127.0.0.1", port=8080, debug=True)
 
 
