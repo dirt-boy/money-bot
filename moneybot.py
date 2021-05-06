@@ -6,7 +6,7 @@ import json
 import secrets
 import bcrypt
 from wtforms import Form, SelectField, SelectMultipleField, SubmitField, validators
-from flask import Flask, request, render_template, session
+from flask import Flask, request, render_template, session, url_for, Response, send_file
 from datetime import date
 
 ###################################################################################################
@@ -117,6 +117,9 @@ class SourceForm(Form):
 class FieldForm(Form):
 	fields = SelectMultipleField("Fields", coerce=str)
 	submitFields = SubmitField("submit")
+
+class DownloadForm(Form):
+	download = SubmitField("stripe_data_"+DATE+".csv")
 #																							      #
 ### END CUSTOM DATA STRUCTURE CLASSES #############################################################
 
@@ -308,6 +311,13 @@ def loadFieldPreset(source):
 		return fields
 
 
+def addToPersistentMem(key, value):
+	PERSIST[key.upper()] = value
+	#setup for positional access
+	pos = list(PERSIST.values()).index(value)
+	k = list(PERSIST.keys())[pos]
+	#save key for persistent data in sesh mem
+	session[key.lower()] = k
 
 
 
@@ -318,6 +328,20 @@ def loadFieldPreset(source):
 
 ### FLASK #######################################################################################
 #
+
+@app.context_processor
+def override_url_for():
+    return dict(url_for=dated_url_for)
+
+def dated_url_for(endpoint, **values):
+    if endpoint == 'static':
+        filename = values.get('filename', None)
+        if filename:
+            file_path = os.path.join(app.root_path,
+                                 endpoint, filename)
+            values['q'] = int(os.stat(file_path).st_mtime)
+    return url_for(endpoint, **values)
+
 @app.route("/", methods=["GET", "POST"])
 def index():
 	sourceForm = SourceForm()
@@ -337,19 +361,10 @@ def configureSource():
 	fieldForm = FieldForm()
 	source = request.args.get('source')
 	if source in PRESETS:
-		#load presets
 		loadSource = loadSourcePreset(source)
-		#grab full dataset
 		data = getData(loadSource.name).charges
-		#save data to persistent memory
-		PERSIST["DATA"] = data
-		#setup for positional access
-		pos = list(PERSIST.values()).index(data)
-		key = list(PERSIST.keys())[pos]
-		#save key for persistent data in sesh mem
-		session["data"] = key
+		addToPersistentMem("data", data)
 		session["source"] = source
-		#update modification status
 		session.modified = True
 		headers =getHeaders(data, loadSource.headerKey, loadSource.headerIndex)
 		fieldForm.fields.choices = [(h[0], h[0]) for h in headers]
@@ -359,18 +374,31 @@ def configureSource():
 
 @app.route("/configure/send-values", methods=["GET", "POST"])
 def sendValuesFromInput():
+	sourceForm = SourceForm()
+	fieldForm = FieldForm()
+	downloadForm = DownloadForm()
+	fieldList = []
 	fields = request.form.getlist("fields")
 	data = PERSIST[session["data"]]
-	source = session["source"]
-	source = loadSourcePreset(source)
-	fieldList = []
+	source = loadSourcePreset(session["source"])
 	fieldsPreset = loadFieldPreset(source)
 	for f in fields:
 		for p in fieldsPreset.values:
 			if f == p.internal_name:
 				fieldList.append(p)
 	#returns valid json data for requested fields
-	return str(getValues(data, fieldList, source))
+	data = getValues(data, fieldList, source)
+	addToPersistentMem("userrequest", data)
+	return render_template("index.html", data=data, sourceForm=sourceForm, downloadForm=downloadForm)
+
+@app.route("/download")
+def getCSV():
+	downloadForm = DownloadForm()
+	data = {"data": PERSIST[session["userrequest"]]  }
+	source = loadSourcePreset(session["source"])
+	csv = write(data, source)
+	filename = "results/balance_transactions_%s.csv" % DATE
+	return send_file(csv, as_attachment=True, mimetype=".csv", attachment_filename=filename)
 
 
 #																								  #

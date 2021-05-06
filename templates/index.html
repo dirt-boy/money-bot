@@ -32,20 +32,33 @@
 
 
 
-	{% block values %}
-		{% if values %}
-			<div class="values">
-				{% for v in values %}
-					<p>{{v}}</p>
-				{% endfor %}
+	{% block data %}
+		{% if data %}
+			<div class="data">
+				
+					<table>
+						<tr>
+							{% for key in data[0].keys() %}
+							<th>{{ key }}</th>
+							{% endfor %}
+						</tr>
+						{% for d in data %}
+						<tr>
+							{% for value in d.values() %}
+							<td>{{ value }}</td>
+							{% endfor %}
+						</tr>
+						{% endfor %}
+					</table>	
 			</div>
+			<form action="/download", method="GET">
+			<div class="download">
+				{{ downloadForm.download }}
+			</div>
+		</form>
 		{% endif %}
 	{% endblock %}
 	
-	
-	{% if data %}
-		<p>{{ data }}</p>
-	{% endif %}
 
 </div>
 {% endblock %}

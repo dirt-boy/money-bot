@@ -1,5 +1,5 @@
 body {
-  background-color: lightblue;
+  background-color: white;
 }
 
 h1 {
@@ -12,9 +12,14 @@ p {
 	margin-left: 20px;
 }
 
+table, th, td {
+  border: 1px solid black;
+}
+
 .fields {
 
 	color: red;
 	text-align:center;
 
 }
+
