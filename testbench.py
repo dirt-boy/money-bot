@@ -88,6 +88,9 @@ t_sources = src.SourcesProperty(src.SourcesIngest, "static/sources.json")
 ###|| END TEST DATA ||###
 
 
+print(testGetValues())
+
+"""
 @app.route("/")
 def testAll():
 	testWrite()
@@ -103,9 +106,9 @@ def testAll():
 def loader(x="HELLO"):
 	return render_template("index.html", x=x)
 	
-
-	
+"""
 
 if __name__ == "__main__":
-	app.run(host="127.0.0.1", port=8080, debug=True)
+	#app.run(host="127.0.0.1", port=8080, debug=True)
+	pass
 

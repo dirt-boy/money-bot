@@ -143,7 +143,7 @@ def FieldsIngestFromDict(values):
 	fieldList = []
 	for v in values:
 		try:
-			fieldList.append(Field('N/A', v, "N/A"))
+			fieldList.append(Field(v["description"], v["internal_name"], v["external_name"]))
 		except ParseError as e:
 			print(e.message)
 	fields = fieldList
@@ -276,7 +276,7 @@ def getData(source):
 		if os.path.exists('static/token.pickle'):
 			try:
 				stripe.api_key = pickle.load(open('static/token.pickle', 'rb'))
-				balance_transactions = stripe.BalanceTransaction.list(limit=3)
+				balance_transactions = stripe.BalanceTransaction.list(limit=10)
 				charges = stripe.Charge.list(limit=10)
 				data = TransactionRecord(balance_transactions, charges)
 				return(data)
@@ -296,6 +296,16 @@ def loadSourcePreset(source):
 				return "Source stripe: string incorrect"
 	else:
 		return "Source not found"
+
+
+def loadFieldPreset(source):
+	path = "static/field_presets_"+source.name+".json"
+	if os.path.exists(path):
+		fieldPresets = open(path, "r")
+		fieldData = json.loads(fieldPresets.read())
+		fieldData = fieldData["fields"]
+		fields = FieldsProperty(FieldsIngestFromDict, fieldData)
+		return fields
 
 
 
@@ -327,33 +337,50 @@ def configureSource():
 	fieldForm = FieldForm()
 	source = request.args.get('source')
 	if source in PRESETS:
+		#load presets
 		loadSource = loadSourcePreset(source)
+		#grab full dataset
 		data = getData(loadSource.name).charges
+		#save data to persistent memory
 		PERSIST["DATA"] = data
+		#setup for positional access
 		pos = list(PERSIST.values()).index(data)
 		key = list(PERSIST.keys())[pos]
+		#save key for persistent data in sesh mem
 		session["data"] = key
+		session["source"] = source
+		#update modification status
 		session.modified = True
 		headers =getHeaders(data, loadSource.headerKey, loadSource.headerIndex)
-		fieldForm.fields.choices = [(h[1], h[0]) for h in headers]
+		fieldForm.fields.choices = [(h[0], h[0]) for h in headers]
 	else:
 		print("Custom source identified.")
 	return render_template("index.html", sourceForm=sourceForm, fieldForm=fieldForm)
 
 @app.route("/configure/send-values", methods=["GET", "POST"])
 def sendValuesFromInput():
-
-	#display data
-	return PERSIST[session["data"]]
+	fields = request.form.getlist("fields")
+	data = PERSIST[session["data"]]
+	source = session["source"]
+	source = loadSourcePreset(source)
+	fieldList = []
+	fieldsPreset = loadFieldPreset(source)
+	for f in fields:
+		for p in fieldsPreset.values:
+			if f == p.internal_name:
+				fieldList.append(p)
+	#returns valid json data for requested fields
+	return str(getValues(data, fieldList, source))
 
 
 #																								  #
 ### END FLASK ###################################################################################
-
 if __name__ == "__main__":
 	#uncomment for live debug vvv
 	app.secret_key = TOKEN
 	app.run(host="127.0.0.1", port=8080, debug=True)
+
+
 
 
 ###################################################################################################

@@ -1,0 +1,304 @@
+{
+    "fields":[
+        {
+            "internal_name":"id",
+            "external_name":"charge_id",
+            "description":"Unique identifier for the object."
+        },
+        {
+            "internal_name":"object",
+            "external_name":"object",
+            "description":"String representing the object’s type. Objects of the same type share the same value."
+        },
+        {
+            "internal_name":"amount",
+            "external_name":"amount",
+            "description":"Gross amount of the transaction, in cents."
+        },
+        {
+            "internal_name":"amount_captured",
+            "external_name":"amount_captured",
+            "description":"Amount in cents captured (can be less than the amount attribute on the charge if a partial capture was made)."
+        },
+        {
+            "internal_name":"amount_refunded",
+            "external_name":"amount_refunded",
+            "description":"Amount in cents refunded (can be less than the amount attribute on the charge if a partial refund was issued)."
+        },
+        {
+            "internal_name":"application",
+            "external_name":"application",
+            "description":"ID of the Connect application that created the charge."
+        },
+        {
+            "internal_name":"application_fee_amount",
+            "external_name":"application_fee_amount",
+            "description":"The amount of the application fee (if any) requested for the charge. See the Connect documentation for details."
+        },
+        {
+            "internal_name":"application_fee",
+            "external_name":"application_fee",
+            "description":"The application fee (if any) for the charge. See the Connect documentation for details."
+        },
+        {
+            "internal_name":"currency",
+            "external_name":"currency",
+            "description":"Three-letter ISO currency code, in lowercase.Must be a supported currency."
+        },
+        {
+            "internal_name":"description",
+            "external_name":"description",
+            "description":"An arbitrary string attached to the object. Often useful for displaying to users."
+        },
+        {
+            "internal_name":"fee",
+            "external_name":"fee",
+            "description":"Fees (in cents) paid for this transaction."
+        },
+        {
+            "internal_name":"net",
+            "external_name":"net",
+            "description":"Net amount of the transaction, in cents."
+        },
+        {
+            "internal_name":"source",
+            "external_name":"source",
+            "description":"The Stripe object to which this transaction is related."
+        },
+        {
+            "internal_name":"status",
+            "external_name":"status",
+            "description":"If the transaction’s net funds are available in the Stripe balance yet. Either available or pending."
+        },
+        {
+            "internal_name":"type",
+            "external_name":"type",
+            "description":"Transaction type: adjustment, advance, advance_funding, anticipation_repayment, application_fee, application_fee_refund, charge, connect_collection_transfer, contribution, issuing_authorization_hold, issuing_authorization_release, issuing_dispute, issuing_transaction, payment, payment_failure_refund, payment_refund, payout, payout_cancel, payout_failure, refund, refund_failure, reserve_transaction, reserved_funds, stripe_fee, stripe_fx_fee, tax_fee, topup, topup_reversal, transfer, transfer_cancel, transfer_failure, or transfer_refund. Learn more about balance transaction types and what they represent. If you are looking to classify transactions for accounting purposes, you might want to consider reporting_category instead."
+        },
+        {
+            "internal_name":"object",
+            "external_name":"object",
+            "description":"String representing the object’s type. Objects of the same type share the same value."
+        },
+        {
+            "internal_name":"available_on",
+            "external_name":"available_on",
+            "description":"The date the transaction’s net funds will become available in the Stripe balance."
+        },
+        {
+            "internal_name":"created",
+            "external_name":"created",
+            "description":"Time at which the object was created. Measured in seconds since the Unix epoch."
+        },
+        {
+            "internal_name":"reporting_category",
+            "external_name":"reporting_category",
+            "description":"Learn more about how reporting categories can help you understand balance transactions from an accounting perspective."
+        },
+        {
+            "internal_name":"balance_transaction",
+            "external_name":"balance_transaction",
+            "description":"ID of the balance transaction that describes the impact of this charge on your account balance (not including refunds or disputes)."
+        },
+        {
+            "internal_name":"billing_details",
+            "external_name":"billing_details",
+            "description":"Billing information associated with the payment method at the time of the transaction."
+        },
+        {
+            "internal_name":"customer",
+            "external_name":"customer",
+            "description":"ID of the customer this charge is for if one exists."
+        },
+        {
+            "internal_name":"dispute",
+            "external_name":"dispute",
+            "description":"If you’ve disputed the transaction, the ID of the dispute."
+        },
+        {
+            "internal_name":"disputed",
+            "external_name":"disputed",
+            "description":"Whether the charge has been disputed."
+        },
+        {
+            "internal_name":"invoice",
+            "external_name":"invoice",
+            "description":"ID of the invoice this charge is for if one exists."
+        },
+        {
+            "internal_name":"metadata",
+            "external_name":"metadata",
+            "description":"Set of key-value pairs that you can attach to an object. This can be useful for storing additional information about the object in a structured format."
+        },
+        {
+            "internal_name":"payment_intent",
+            "external_name":"payment_intent",
+            "description":"ID of the PaymentIntent associated with this charge, if one exists."
+        },
+        {
+            "internal_name":"payment_method_details",
+            "external_name":"payment_method_details",
+            "description":"Details about the payment method at the time of the transaction."
+        },
+        {
+            "internal_name":"receipt_email",
+            "external_name":"receipt_email",
+            "description":"This is the email address that the receipt for this charge was sent to."
+        },
+        {
+            "internal_name":"refunded",
+            "external_name":"refunded",
+            "description":"Whether the charge has been fully refunded. If the charge is only partially refunded, this attribute will still be false."
+        },
+        {
+            "internal_name":"shipping",
+            "external_name":"shipping",
+            "description":"Shipping information for the charge."
+        },
+        {
+            "internal_name":"statement_descriptor",
+            "external_name":"statement_descriptor",
+            "description":"For card charges, use statement_descriptor_suffix instead. Otherwise, you can use this value as the complete description of a charge on your customers’ statements. Must contain at least one letter, maximum 22 characters."
+        },
+        {
+            "internal_name":"statement_descriptor_suffix",
+            "external_name":"statement_descriptor_suffix",
+            "description":"Provides information about the charge that customers see on their statements. Concatenated with the prefix (shortened descriptor) or statement descriptor that’s set on the account to form the complete statement descriptor. Maximum 22 characters for the concatenated descriptor."
+        },
+        {
+            "internal_name":"status",
+            "external_name":"status",
+            "description":"The status of the payment is either succeeded, pending, or failed."
+        },
+        {
+            "internal_name":"calculated_statement_descriptor",
+            "external_name":"calculated_statement_descriptor",
+            "description":"The full statement descriptor that is passed to card networks, and that is displayed on your customers’ credit card and bank statements. Allows you to see what the statement descriptor looks like after the static and dynamic portions are combined."
+        },
+        {
+            "internal_name":"captured",
+            "external_name":"captured",
+            "description":"If the charge was created without capturing, this Boolean represents whether it is still uncaptured or has since been captured."
+        },
+        {
+            "internal_name":"failure_code",
+            "external_name":"failure_code",
+            "description":"Error code explaining reason for charge failure if available (see the errors section for a list of codes)."
+        },
+        {
+            "internal_name":"failure_message",
+            "external_name":"failure_message",
+            "description":"Message to user further explaining reason for charge failure if available."
+        },
+        {
+            "internal_name":"fraud_details",
+            "external_name":"fraud_details",
+            "description":"Information on fraud assessments for the charge."
+        },
+        {
+            "internal_name":"livemode",
+            "external_name":"liveode",
+            "description":"Has the value true if the object exists in live mode or the value false if the object exists in test mode."
+        },
+        {
+            "internal_name":"on_behalf_of",
+            "external_name":"on_behalf_of",
+            "description":"The account (if any) the charge was made on behalf of without triggering an automatic transfer. See the Connect documentation for details."
+        },
+        {
+            "internal_name":"order",
+            "external_name":"order",
+            "description":"ID of the order this charge is for if one exists."
+        },
+        {
+            "internal_name":"outcome",
+            "external_name":"outcome",
+            "description":"Details about whether the payment was accepted, and why. See understanding declines for details."
+        },
+        {
+            "internal_name":"paid",
+            "external_name":"paid",
+            "description":"true if the charge succeeded, or was successfully authorized for later capture."
+        },
+        {
+            "internal_name":"payment_method",
+            "external_name":"payment_method",
+            "description":"ID of the payment method used in this charge."
+        },
+        {
+            "internal_name":"receipt_number",
+            "external_name":"receipt_number",
+            "description":"This is the transaction number that appears on email receipts sent for this charge. This attribute will be null until a receipt has been sent."
+        },
+        {
+            "internal_name":"receipt_url",
+            "external_name":"receipt_url",
+            "description":"This is the URL to view the receipt for this charge. The receipt is kept up-to-date to the latest state of the charge, including any refunds. If the charge is for an Invoice, the receipt will be stylized as an Invoice receipt."
+        },
+        {
+            "internal_name":"refunds",
+            "external_name":"refunds",
+            "description":"A list of refunds that have been applied to the charge."
+        },
+        {
+            "internal_name":"review",
+            "external_name":"review",
+            "description":"ID of the review associated with this charge if one exists."
+        },
+        {
+            "internal_name":"source_transfer",
+            "external_name":"source_transfer",
+            "description":"The transfer ID which created this charge. Only present if the charge came from another Stripe account. See the Connect documentation for details."
+        },
+        {
+            "internal_name":"transfer",
+            "external_name":"transfer",
+            "description":"ID of the transfer to the destination account (only applicable if the charge was created using the destination parameter)."
+        },
+        {
+            "internal_name":"transfer_data",
+            "external_name":"transfer_data",
+            "description":"An optional dictionary including the account to automatically transfer to as part of a destination charge. See the Connect documentation for details."
+        },
+        {
+            "internal_name":"transfer_group",
+            "external_name":"transfer_group",
+            "description":"A string that identifies this transaction as part of a group. See the Connect documentation for details."
+        },
+        {
+            "internal_name":"order",
+            "external_name":"order",
+            "description":"ID of the order this charge is for if one exists."
+        },
+        {
+            "internal_name":"order",
+            "external_name":"order",
+            "description":"ID of the order this charge is for if one exists."
+        },
+        {
+            "internal_name":"order",
+            "external_name":"order",
+            "description":"ID of the order this charge is for if one exists."
+        },
+        {
+            "internal_name":"card",
+            "external_name":"card",
+            "description":"Hash describing the card used to make the charge."
+        },
+        {
+            "internal_name":"destination",
+            "external_name":"destination",
+            "description":"ID of the bank account or card the payout was sent to."
+        },
+        {
+            "internal_name":"payment_method",
+            "external_name":"payment_method",
+            "description":"ID of the payment method used in this charge."
+        },
+        {
+            "internal_name":"payment_method_details",
+            "external_name":"payment_method_details",
+            "description":"Details about the payment method at the time of the transaction."
+        }
+    ]
+}
