@@ -6,6 +6,8 @@ import json
 import secrets
 import bcrypt
 import gspread
+import requests
+from simple_salesforce import Salesforce
 from wtforms import Form, SelectField, SelectMultipleField, SubmitField, validators
 from flask import Flask, request, render_template, session, url_for, Response, send_file, redirect
 from datetime import date
@@ -41,6 +43,7 @@ TOKEN = getHashedKey(secrets.token_urlsafe(36))
 PERSIST = {}
 SERVICE_ACCOUNT_PATH = "/Users/gg/NerdStuff/money-bot-web/venv/lib/python3.8/site-packages/gspread/service_account.json"
 DRIVE_EXPORT_FOLDER_ID = "1OrJ_sqt2xI9tPnttTNMBJ_1cf4WNW0XC"
+SALESFORCE_AUTH = json.loads(pickle.load(open('static/salesforce_creds.pickle', 'rb')))
 #																								  #
 ### END GLOBAL VARIABLES ##########################################################################
 
@@ -140,7 +143,7 @@ class DownloadForm(Form):
 	download = SubmitField("download")
 
 class ExportForm(Form):
-	export = SubmitField("export")
+	export = SubmitField("export to sheets")
 #																							      #
 ### END CUSTOM DATA STRUCTURE CLASSES #############################################################
 
@@ -186,7 +189,6 @@ def SourcesIngest(file):
 	sourceList = []
 	f = open(file, "r")
 	data = f.read()
-	print(data)
 	data = json.loads(data)["sources"]
 	for s in data:
 		sourceList.append(Source(s['name'], s['description'], s['url'], s['headerKey'], s['headerIndex']))
@@ -364,6 +366,36 @@ def makeCSV(data, source):
 
 
 
+### DATABASE ####################################################################################
+#
+#|| SALESFORCE ||#
+
+def getService(SALESFORCE_AUTH):
+	username = SALESFORCE_AUTH["username"]
+	password = SALESFORCE_AUTH["password"]
+	token = SALESFORCE_AUTH["token"]
+	sf = Salesforce(username=username, password=password, security_token=token)
+	return sf
+	
+
+def createContact():
+	#do stuff
+	pass
+
+def createOpp():
+	#do stuff
+	pass
+
+def checkExists():
+	#dostuff
+	pass
+
+#																								  #
+### END DATABASE ################################################################################
+
+
+
+
 ### FLASK #######################################################################################
 #
 
@@ -451,11 +483,15 @@ def export():
 	link = "https://docs.google.com/spreadsheets/d/"+loc.id
 	return redirect(link, 301)
 
+@app.route("/salesforce", methods=["GET", "POST"])
+def salesforce_test():
+	sf = getService(SALESFORCE_AUTH)
+	return(str(sf))
+
 
 
 #																								  #
 ### END FLASK ###################################################################################
-
 
 
 ###################################################################################################
