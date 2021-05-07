@@ -68,13 +68,18 @@ class ParseError(Error):
 	message = "Unable to parse values. Please check custom property constructors and input values."
 	def __init__(self, message):
 		self.message = message
-#																							      #
+#								
+class MakeError(Error):
+	message = "Unable to make csv. Please check data formatting"
+	def __init__(self, message):
+		self.message = message															      #
 ### END CUSTOM ERROR CLASSES ######################################################################
 
 
 
 ### CUSTOM DATA STRUCTURE CLASSES #################################################################
-#																								  #
+#	
+#|| DATA TYPES ||#																							  #
 class TransactionRecord:
 	def __init__(self, balance_transactions, charges):
 		self.balance_transactions = balance_transactions
@@ -110,6 +115,7 @@ class Source:
 		self.headerKey = headerKey
 		self.headerIndex = headerIndex
 
+#|| WTFORMS CLASSES ||#
 class SourceForm(Form):
 	source = SelectField('Source', choices=PRESETS)
 	submitSource = SubmitField("submit")
@@ -119,7 +125,7 @@ class FieldForm(Form):
 	submitFields = SubmitField("submit")
 
 class DownloadForm(Form):
-	download = SubmitField("stripe_data_"+DATE+".csv")
+	download = SubmitField("download")
 #																							      #
 ### END CUSTOM DATA STRUCTURE CLASSES #############################################################
 
@@ -319,8 +325,25 @@ def addToPersistentMem(key, value):
 	#save key for persistent data in sesh mem
 	session[key.lower()] = k
 
+def loadFromPersistentMem(key):
+	val = PERSIST[session[key]]
+	return val
 
 
+def makeCSV(data, source):
+	headers = [h[0] for h in getHeaders(data, source.headerKey, source.headerIndex)]
+	sep = ","
+	csv = sep.join(headers)
+	csv+="\n"
+	try:
+		for d in data[source.headerKey]:
+			row = ""
+			for key in d:
+				row+= str(d[key])+","
+			csv+= row[:len(row)-1]+"\n"
+		return csv
+	except MakeError as e:
+		print(e.message)
 #																								  #
 ### END METHODS ###################################################################################
 
@@ -392,25 +415,22 @@ def sendValuesFromInput():
 	return render_template("index.html", data=data, sourceForm=sourceForm, downloadForm=downloadForm)
 
 @app.route("/download")
-def getCSV():
-	downloadForm = DownloadForm()
-	data = {"data": PERSIST[session["userrequest"]]  }
+def download():
+	name = "balance_transactions_"+DATE
+	data = {"data": loadFromPersistentMem("userrequest")}
 	source = loadSourcePreset(session["source"])
-	csv = write(data, source)
-	filename = "results/balance_transactions_%s.csv" % DATE
-	return send_file(csv, as_attachment=True, mimetype=".csv", attachment_filename=filename)
-
-
+	csv = makeCSV(data, source)
+	return Response(csv, mimetype="text/csv", headers={"Content-disposition":"attachment; filename="+name+".csv"})
 #																								  #
 ### END FLASK ###################################################################################
-if __name__ == "__main__":
-	#uncomment for live debug vvv
-	app.secret_key = TOKEN
-	app.run(host="127.0.0.1", port=8080, debug=True)
-
 
 
 
 ###################################################################################################
 ##########################################  END DEFINITIONS #######################################
 ###################################################################################################	
+
+if __name__ == "__main__":
+	#uncomment for live debug vvv
+	app.secret_key = TOKEN
+	app.run(host="127.0.0.1", port=8080, debug=True)
