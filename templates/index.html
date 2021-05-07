@@ -55,7 +55,12 @@
 			<div class="download">
 				{{ downloadForm.download }}
 			</div>
-		</form>
+			</form>
+			<form action="/export", method="POST", target="blank">
+			<div class="export">
+				{{ exportForm.export }}
+			</div>
+			</form>
 		{% endif %}
 	{% endblock %}
 	

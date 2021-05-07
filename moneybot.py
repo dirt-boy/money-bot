@@ -5,8 +5,9 @@ import pickle
 import json
 import secrets
 import bcrypt
+import gspread
 from wtforms import Form, SelectField, SelectMultipleField, SubmitField, validators
-from flask import Flask, request, render_template, session, url_for, Response, send_file
+from flask import Flask, request, render_template, session, url_for, Response, send_file, redirect
 from datetime import date
 
 ###################################################################################################
@@ -28,6 +29,7 @@ def checkKey(plain_text_key, hashed_key):
 ### END SECURITY ##################################################################################	
 
 
+
 ### GLOBAL VARIABLES #############################################################################
 #																								  #	
 DATE = date.today().strftime('%m_%d_%y')
@@ -37,8 +39,18 @@ app = Flask(__name__, static_folder="static")
 PRESETS = ["stripe", "none"]
 TOKEN = getHashedKey(secrets.token_urlsafe(36))
 PERSIST = {}
+SERVICE_ACCOUNT_PATH = "/Users/gg/NerdStuff/money-bot-web/venv/lib/python3.8/site-packages/gspread/service_account.json"
+DRIVE_EXPORT_FOLDER_ID = "1OrJ_sqt2xI9tPnttTNMBJ_1cf4WNW0XC"
 #																								  #
 ### END GLOBAL VARIABLES ##########################################################################
+
+
+
+### GSPREAD #######################################################################################
+#
+exp = gspread.service_account(SERVICE_ACCOUNT_PATH)
+#																								  #
+### END GSPREAD ###################################################################################	
 
 
 
@@ -126,6 +138,9 @@ class FieldForm(Form):
 
 class DownloadForm(Form):
 	download = SubmitField("download")
+
+class ExportForm(Form):
+	export = SubmitField("export")
 #																							      #
 ### END CUSTOM DATA STRUCTURE CLASSES #############################################################
 
@@ -400,6 +415,7 @@ def sendValuesFromInput():
 	sourceForm = SourceForm()
 	fieldForm = FieldForm()
 	downloadForm = DownloadForm()
+	exportForm = ExportForm()
 	fieldList = []
 	fields = request.form.getlist("fields")
 	data = PERSIST[session["data"]]
@@ -412,7 +428,7 @@ def sendValuesFromInput():
 	#returns valid json data for requested fields
 	data = getValues(data, fieldList, source)
 	addToPersistentMem("userrequest", data)
-	return render_template("index.html", data=data, sourceForm=sourceForm, downloadForm=downloadForm)
+	return render_template("index.html", data=data, sourceForm=sourceForm, downloadForm=downloadForm, exportForm=exportForm)
 
 @app.route("/download")
 def download():
@@ -420,7 +436,23 @@ def download():
 	data = {"data": loadFromPersistentMem("userrequest")}
 	source = loadSourcePreset(session["source"])
 	csv = makeCSV(data, source)
+	addToPersistentMem("csv", csv)
 	return Response(csv, mimetype="text/csv", headers={"Content-disposition":"attachment; filename="+name+".csv"})
+
+@app.route("/export", methods=["GET", "POST"])
+def export():
+	name = "balance_transactions_"+DATE
+	loc = exp.create(name, DRIVE_EXPORT_FOLDER_ID)
+	data = {"data": loadFromPersistentMem("userrequest")}
+	source = loadSourcePreset(session["source"])
+	csv = makeCSV(data, source)
+	addToPersistentMem("csv", csv)
+	exp.import_csv(loc.id, csv)
+	link = "https://docs.google.com/spreadsheets/d/"+loc.id
+	return redirect(link, 301)
+
+
+
 #																								  #
 ### END FLASK ###################################################################################
 
