@@ -386,9 +386,10 @@ def createOpp():
 	#do stuff
 	pass
 
-def checkExists():
-	#dostuff
-	pass
+def checkExists(fname, lname):
+	q = sf.query("SELECT Id FROM Contact WHERE LastName = "+lname+" AND FirstName = "+fname)
+	print(q)
+	return q
 
 #																								  #
 ### END DATABASE ################################################################################
@@ -485,8 +486,10 @@ def export():
 
 @app.route("/salesforce", methods=["GET", "POST"])
 def salesforce_test():
+	csv = loadFromPersistentMem("csv")
+	names = [line["billing_details"]["name"] for line in csv]
 	sf = getService(SALESFORCE_AUTH)
-	return(str(sf))
+	return(str(names))
 
 
 
