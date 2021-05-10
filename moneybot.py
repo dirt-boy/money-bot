@@ -246,8 +246,16 @@ STRIPE_PRESET = SourcesProperty(SourcesIngest, "static/sources.json")
 ### METHODS #######################################################################################
 #	
 def getHeaders(data, key, index):
-	headers = data[key][index].items()
-	return headers
+	data = data[key][index]
+	headers = list(data.keys())
+	result = []
+	for h in headers:
+		if type(data[h]) != stripe.stripe_object.StripeObject:
+			result.append(h)
+		else:
+			result.extend(data[h].keys())
+			processSubkey(data, h)
+	return result
 																							  
 #if an ingested field object has the same internal name as a header, pull data for that field
 def matchFields(data, fields, source):
@@ -346,6 +354,30 @@ def loadFromPersistentMem(key):
 	val = PERSIST[session[key]]
 	return val
 
+def processSubkey(subDict, subkey):
+	"""
+	subdict =
+	{billing_details:
+		{
+			address: 
+				{
+					... data
+				}
+			email: joe@fakemail.com,
+			name: Joe McFakerson,
+			phone: 1-800-ARE-U-SLAPPING
+
+		}	
+	}
+	"""	
+	res = []
+	subVals = subDict[subkey]
+	print(subVals.keys())
+	for key in subVals:
+		if type(subVals[key]) == stripe.stripe_object.StripeObject:
+			return processSubkey(subVals, key)
+	return res
+
 
 def makeCSV(data, source):
 	headers = [h[0] for h in getHeaders(data, source.headerKey, source.headerIndex)]
@@ -438,7 +470,7 @@ def configureSource():
 		session["source"] = source
 		session.modified = True
 		headers =getHeaders(data, loadSource.headerKey, loadSource.headerIndex)
-		fieldForm.fields.choices = [(h[0], h[0]) for h in headers]
+		fieldForm.fields.choices = [(h, h) for h in headers]
 	else:
 		print("Custom source identified.")
 	return render_template("index.html", sourceForm=sourceForm, fieldForm=fieldForm)
@@ -487,9 +519,8 @@ def export():
 @app.route("/salesforce", methods=["GET", "POST"])
 def salesforce_test():
 	csv = loadFromPersistentMem("csv")
-	names = [line["billing_details"]["name"] for line in csv]
 	sf = getService(SALESFORCE_AUTH)
-	return(str(names))
+	
 
 
 
