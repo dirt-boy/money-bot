@@ -247,14 +247,14 @@ STRIPE_PRESET = SourcesProperty(SourcesIngest, "static/sources.json")
 #	
 def getHeaders(data, key, index):
 	data = data[key][index]
-	headers = list(data.keys())
+	headers = list(data.items())
 	result = []
 	for h in headers:
-		if type(data[h]) != stripe.stripe_object.StripeObject:
-			result.append(h)
+		if type(data[h[0]]) != stripe.stripe_object.StripeObject:
+			result.append(h[0])
 		else:
-			result.extend(data[h].keys())
-			processSubkey(data, h)
+			result.extend(data[h[0]].keys())
+			processSubkey(data, h[0])
 	return result
 																							  
 #if an ingested field object has the same internal name as a header, pull data for that field
@@ -300,8 +300,13 @@ def getValues(data, fields, source):
 		result.append({})
 	for i, d in enumerate(data[source.headerKey]):
 		for key in d:
+			if type(d[key]) == stripe.stripe_object.StripeObject:
+				for subKey in d[key]:
+					if subKey in fieldNames and i<len(result):
+						result[i][subKey] = d[key][subKey]
 			if key in fieldNames and i<len(result):
 				result[i][key] = d[key]
+	print(result)
 	return result
 
 
@@ -355,21 +360,6 @@ def loadFromPersistentMem(key):
 	return val
 
 def processSubkey(subDict, subkey):
-	"""
-	subdict =
-	{billing_details:
-		{
-			address: 
-				{
-					... data
-				}
-			email: joe@fakemail.com,
-			name: Joe McFakerson,
-			phone: 1-800-ARE-U-SLAPPING
-
-		}	
-	}
-	"""	
 	res = []
 	subVals = subDict[subkey]
 	print(subVals.keys())
@@ -379,8 +369,9 @@ def processSubkey(subDict, subkey):
 	return res
 
 
+
 def makeCSV(data, source):
-	headers = [h[0] for h in getHeaders(data, source.headerKey, source.headerIndex)]
+	headers = [h for h in getHeaders(data, source.headerKey, source.headerIndex)]
 	sep = ","
 	csv = sep.join(headers)
 	csv+="\n"
@@ -520,10 +511,6 @@ def export():
 def salesforce_test():
 	csv = loadFromPersistentMem("csv")
 	sf = getService(SALESFORCE_AUTH)
-	
-
-
-
 #																								  #
 ### END FLASK ###################################################################################
 

@@ -16,6 +16,12 @@
             "description":"Gross amount of the transaction, in cents."
         },
         {
+            "internal_name":"name",
+            "external_name":"full name",
+            "description":"Full Name."
+        },
+
+        {
             "internal_name":"amount_captured",
             "external_name":"amount_captured",
             "description":"Amount in cents captured (can be less than the amount attribute on the charge if a partial capture was made)."
