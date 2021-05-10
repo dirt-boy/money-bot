@@ -144,6 +144,9 @@ class DownloadForm(Form):
 
 class ExportForm(Form):
 	export = SubmitField("export to sheets")
+
+class SalesforceForm(Form):
+	salesforce = SubmitField("salesforce handshake")
 #																							      #
 ### END CUSTOM DATA STRUCTURE CLASSES #############################################################
 
@@ -409,10 +412,12 @@ def createOpp():
 	#do stuff
 	pass
 
-def checkExists(fname, lname):
+def checkExists(fname, lname, sf):
 	q = sf.query("SELECT Id FROM Contact WHERE LastName = "+lname+" AND FirstName = "+fname)
-	print(q)
-	return q
+	if q["totalSize"] >= 1:
+		return True
+	else:
+		return False
 
 #																								  #
 ### END DATABASE ################################################################################
@@ -472,6 +477,7 @@ def sendValuesFromInput():
 	fieldForm = FieldForm()
 	downloadForm = DownloadForm()
 	exportForm = ExportForm()
+	salesforceForm = SalesforceForm()
 	fieldList = []
 	fields = request.form.getlist("fields")
 	data = PERSIST[session["data"]]
@@ -484,7 +490,9 @@ def sendValuesFromInput():
 	#returns valid json data for requested fields
 	data = getValues(data, fieldList, source)
 	addToPersistentMem("userrequest", data)
-	return render_template("index.html", data=data, sourceForm=sourceForm, downloadForm=downloadForm, exportForm=exportForm)
+	csv = makeCSV(data={"data": loadFromPersistentMem("userrequest")}, source=source)
+	addToPersistentMem("csv", csv)
+	return render_template("index.html", data=data, sourceForm=sourceForm, downloadForm=downloadForm, exportForm=exportForm, salesforceForm=salesforceForm)
 
 @app.route("/download")
 def download():
@@ -511,6 +519,11 @@ def export():
 def salesforce_test():
 	csv = loadFromPersistentMem("csv")
 	sf = getService(SALESFORCE_AUTH)
+	### SIMPLE SALESFORCE HANDSHAKE!!! NOT EFFECTIVE!!!####
+	return str(checkExists("'Gabriel'", "'Gagnon'", sf))
+	#must go from csv vals -> full names -> fname and lname as args
+	#po
+	#return str(checkExists("'Gabriel'", "'Gagnon'", sf))
 #																								  #
 ### END FLASK ###################################################################################
 
