@@ -132,3 +132,7 @@ dmypy.json
 /data
 /results
 .trash
+
+# venv stuff
+/bin**
+/lib**
