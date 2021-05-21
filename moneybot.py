@@ -413,11 +413,30 @@ def createOpp():
 	pass
 
 def checkExists(fname, lname, sf):
-	q = sf.query("SELECT Id FROM Contact WHERE LastName = "+lname+" AND FirstName = "+fname)
-	if q["totalSize"] >= 1:
-		return True
+	q = sf.query_all("SELECT Id, Region__c, AccountId  FROM Contact WHERE LastName = "+lname+" AND FirstName = "+fname)
+	if q["totalSize"] == 1:
+		Id = q["records"][0]["Id"]
+		Region = q["records"][0]["Region__c"]
+		AccountId = q["records"][0]["AccountId"]
+		return {"Contact ID":Id, "Region":Region, "Account ID": AccountId}
 	else:
+		##should route to optional contact creation?
 		return False
+
+def makeSfString(string):
+	return "'"+string+"'"
+
+def getOppName(opp):
+	return
+
+def getCloseDate(opp):
+	return
+
+def getAmount(opp):
+	return
+
+
+
 
 #																								  #
 ### END DATABASE ################################################################################
@@ -517,13 +536,23 @@ def export():
 
 @app.route("/salesforce", methods=["GET", "POST"])
 def salesforce_test():
-	csv = loadFromPersistentMem("csv")
+	data = loadFromPersistentMem("userrequest")
 	sf = getService(SALESFORCE_AUTH)
-	### SIMPLE SALESFORCE HANDSHAKE!!! NOT EFFECTIVE!!!####
-	return str(checkExists("'Gabriel'", "'Gagnon'", sf))
-	#must go from csv vals -> full names -> fname and lname as args
-	#po
-	#return str(checkExists("'Gabriel'", "'Gagnon'", sf))
+	names = [d["name"] for d in data]
+	splitNames = []
+	for name in names:
+		first, *last = name.split()
+		last = " ".join(last)
+		splitNames.append((first, last))
+		exist = []
+	for fname, lname in splitNames:
+		fname = makeSfString(fname)
+		lname = makeSfString(lname)
+		status = checkExists(fname, lname, sf)
+		exist.append((fname, lname, status))
+	return str(exist)
+
+	
 #																								  #
 ### END FLASK ###################################################################################
 
