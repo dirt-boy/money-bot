@@ -10,7 +10,7 @@ import requests
 from simple_salesforce import Salesforce
 from wtforms import Form, SelectField, SelectMultipleField, SubmitField, validators
 from flask import Flask, request, render_template, session, url_for, Response, send_file, redirect
-from datetime import date
+from datetime import date, datetime
 
 ###################################################################################################
 ########################################## DEFINITIONS ############################################
@@ -146,7 +146,7 @@ class ExportForm(Form):
 	export = SubmitField("export to sheets")
 
 class SalesforceForm(Form):
-	salesforce = SubmitField("salesforce handshake")
+	salesforce = SubmitField("Manual Upload to Salesforce")
 #																							      #
 ### END CUSTOM DATA STRUCTURE CLASSES #############################################################
 
@@ -402,23 +402,43 @@ def getService(SALESFORCE_AUTH):
 	token = SALESFORCE_AUTH["token"]
 	sf = Salesforce(username=username, password=password, security_token=token)
 	return sf
-	
 
 def createContact():
 	#do stuff
 	pass
 
-def createOpp():
-	#do stuff
-	pass
+def createOpp(sf, data, contacts):
+	for d in data:
+		close_date_UTC = d["created"]
+		close_date = datetime.fromtimestamp(close_date_UTC)
+		close_date_sf = str(close_date)[:10]
+		fy = getFY(close_date)
+		amount = d["amount"]/100
+		status = d["paid"]
+		name = d["name"]
+		for contact in contacts:
+			vals = contact[2]
+			c_name = contact[0][1:len(contact[0])-1]+" "+contact[1][1:len(contact[1])-1]
+			if vals != False and status != False and c_name == name:
+				region = vals["region"]
+				stage = "Posted"
+				contact_id = vals["contact_id"]
+				account_id = vals["account_id"]
+				donation_platform = loadSourcePreset(session["source"]).name
+				name = contact[0]+" "+contact[1]+" Donation "+fy
+				opp = sf.Opportunity.create({'Name': name,'Region_Allocation__c':region, "CloseDate": close_date_sf, "StageName": stage, "npsp__Primary_Contact__c": contact_id, "AccountId":account_id, "Donation_Platform__c": donation_platform, "Amount": amount})
+			else:
+				pass
+	return "complete."
+
 
 def checkExists(fname, lname, sf):
-	q = sf.query_all("SELECT Id, Region__c, AccountId  FROM Contact WHERE LastName = "+lname+" AND FirstName = "+fname)
+	q = sf.query_all("SELECT Id, Region__c, AccountId FROM Contact WHERE LastName = "+lname+" AND FirstName = "+fname)
 	if q["totalSize"] == 1:
 		Id = q["records"][0]["Id"]
 		Region = q["records"][0]["Region__c"]
 		AccountId = q["records"][0]["AccountId"]
-		return {"Contact ID":Id, "Region":Region, "Account ID": AccountId}
+		return {"contact_id":Id, "region":Region, "account_id": AccountId}
 	else:
 		##should route to optional contact creation?
 		return False
@@ -428,6 +448,12 @@ def makeSfString(string):
 
 def getOppName(opp):
 	return
+
+def getFY(closeDate):
+	if closeDate.month > 7:
+		return str(date.today().year + 1)[-2:]
+	else:
+		return str(date.today().year)[-2:]
 
 def getCloseDate(opp):
 	return
@@ -550,7 +576,7 @@ def salesforce_test():
 		lname = makeSfString(lname)
 		status = checkExists(fname, lname, sf)
 		exist.append((fname, lname, status))
-	return str(exist)
+	return createOpp(sf, data, exist)
 
 	
 #																								  #
