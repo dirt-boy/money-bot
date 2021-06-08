@@ -44,6 +44,8 @@ PERSIST = {}
 SERVICE_ACCOUNT_PATH = "/Users/gg/NerdStuff/money-bot-web/venv/lib/python3.8/site-packages/gspread/service_account.json"
 DRIVE_EXPORT_FOLDER_ID = "1OrJ_sqt2xI9tPnttTNMBJ_1cf4WNW0XC"
 SALESFORCE_AUTH = json.loads(pickle.load(open('static/salesforce_creds.pickle', 'rb')))
+DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+FREQUENCIES = ["Weekly", "Bi-Weekly", "Monthly"]
 #																								  #
 ### END GLOBAL VARIABLES ##########################################################################
 
@@ -147,6 +149,12 @@ class ExportForm(Form):
 
 class SalesforceForm(Form):
 	salesforce = SubmitField("Manual Upload to Salesforce")
+	contact = SubmitField("Upload missing contacts to Salesforce")
+
+class CadenceForm(Form):
+	cadenceDay = SelectField("Select Day", choices=DAYS)
+	cadenceFreq = SelectField("Select Frequency", choices=FREQUENCIES)
+	submit = SubmitField("Submit Cadence")
 #																							      #
 ### END CUSTOM DATA STRUCTURE CLASSES #############################################################
 
@@ -403,9 +411,17 @@ def getService(SALESFORCE_AUTH):
 	sf = Salesforce(username=username, password=password, security_token=token)
 	return sf
 
-def createContact():
-	#do stuff
-	pass
+def createContact(sf, contacts):
+	for contact in contacts:
+		if contact[2] == False:
+			fname = contact[0][1:len(contact[0])-1]
+			lname = contact[1][1:len(contact[1])-1]
+			sf.Contact.create({'FirstName': fname, "LastName": lname, 'Region__c': "Other Region" })
+		else:
+			pass
+	return "Complete"
+		
+	
 
 def createOpp(sf, data, contacts):
 	for d in data:
@@ -413,9 +429,9 @@ def createOpp(sf, data, contacts):
 		close_date = datetime.fromtimestamp(close_date_UTC)
 		close_date_sf = str(close_date)[:10]
 		fy = getFY(close_date)
-		amount = d["amount"]/100
-		status = d["paid"]
-		name = d["name"]
+		amount = getAmount(d)
+		status = getStatus(d)
+		name = getName(d)
 		for contact in contacts:
 			vals = contact[2]
 			c_name = contact[0][1:len(contact[0])-1]+" "+contact[1][1:len(contact[1])-1]
@@ -425,7 +441,7 @@ def createOpp(sf, data, contacts):
 				contact_id = vals["contact_id"]
 				account_id = vals["account_id"]
 				donation_platform = loadSourcePreset(session["source"]).name
-				name = contact[0]+" "+contact[1]+" Donation "+fy
+				name = getOppName(contact, fy)
 				opp = sf.Opportunity.create({'Name': name,'Region_Allocation__c':region, "CloseDate": close_date_sf, "StageName": stage, "npsp__Primary_Contact__c": contact_id, "AccountId":account_id, "Donation_Platform__c": donation_platform, "Amount": amount})
 			else:
 				pass
@@ -446,8 +462,8 @@ def checkExists(fname, lname, sf):
 def makeSfString(string):
 	return "'"+string+"'"
 
-def getOppName(opp):
-	return
+def getOppName(contact, fy):
+	return contact[0]+" "+contact[1]+" Donation "+fy
 
 def getFY(closeDate):
 	if closeDate.month > 7:
@@ -456,10 +472,22 @@ def getFY(closeDate):
 		return str(date.today().year)[-2:]
 
 def getCloseDate(opp):
-	return
+	close_date_UTC = d["created"]
+	close_date = datetime.fromtimestamp(close_date_UTC)
+	close_date_sf = str(close_date)[:10]
+	return close_date_sf
 
 def getAmount(opp):
-	return
+	return opp["amount"]
+
+def getStatus(opp):
+	return opp["paid"]
+
+def getName(opp):
+	return opp["name"]
+
+def getCName(contact):
+	return contact[0][1:len(contact[0])-1]+" "+contact[1][1:len(contact[1])-1]
 
 
 
@@ -523,6 +551,7 @@ def sendValuesFromInput():
 	downloadForm = DownloadForm()
 	exportForm = ExportForm()
 	salesforceForm = SalesforceForm()
+	cadenceForm = CadenceForm()
 	fieldList = []
 	fields = request.form.getlist("fields")
 	data = PERSIST[session["data"]]
@@ -537,7 +566,7 @@ def sendValuesFromInput():
 	addToPersistentMem("userrequest", data)
 	csv = makeCSV(data={"data": loadFromPersistentMem("userrequest")}, source=source)
 	addToPersistentMem("csv", csv)
-	return render_template("index.html", data=data, sourceForm=sourceForm, downloadForm=downloadForm, exportForm=exportForm, salesforceForm=salesforceForm)
+	return render_template("index.html", data=data, sourceForm=sourceForm, downloadForm=downloadForm, exportForm=exportForm, salesforceForm=salesforceForm, cadenceForm=cadenceForm)
 
 @app.route("/download")
 def download():
@@ -577,6 +606,33 @@ def salesforce_test():
 		status = checkExists(fname, lname, sf)
 		exist.append((fname, lname, status))
 	return createOpp(sf, data, exist)
+
+@app.route("/salesforce-contact", methods=["GET", "POST"])
+def salesforce_contact():
+	data = loadFromPersistentMem("userrequest")
+	sf = getService(SALESFORCE_AUTH)
+	names = [d["name"] for d in data]
+	splitNames = []
+	for name in names:
+		first, *last = name.split()
+		last = " ".join(last)
+		splitNames.append((first, last))
+		exist = []
+	for fname, lname in splitNames:
+		fname = makeSfString(fname)
+		lname = makeSfString(lname)
+		status = checkExists(fname, lname, sf)
+		exist.append((fname, lname, status))
+	return createContact(sf, exist)
+
+@app.route("/set-cadence", methods=["GET", "POST"])
+def set_cadence():
+	day = request.args.get("cadenceDay")
+	freq = request.args.get("cadenceFreq")
+	addToPersistentMem("Cadence", (day, freq))
+	message = "Data will be uploaded automatically on %s, %s" % (day, freq)
+	return message
+
 
 	
 #																								  #

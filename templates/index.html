@@ -66,6 +66,20 @@
 				{{ salesforceForm.salesforce }}
 			</div>
 			</form>
+			<form action="/salesforce-contact", method="GET">
+			<div class="salesforce">
+				{{ salesforceForm.contact }}
+			</div>
+			</form>
+
+			<form action="/set-cadence", method="GET">
+			<div class="set-cadence">
+				{{ cadenceForm.cadenceDay }}
+				{{ cadenceForm.cadenceFreq }}
+				{{ cadenceForm.submit }}
+				
+			</div>
+			</form>
 		{% endif %}
 	{% endblock %}
 	
